@@ -4,23 +4,37 @@ from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
 from kivy.uix.label import Label
 
+class MyTextInput(TextInput):
+    def __init__(self, **kwargs):
+        super(MyTextInput, self).__init__(**kwargs)
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            self.text = ""
+        return super(MyTextInput, self).on_touch_down(touch)
+    
+    def on_focus(self, instance, value):
+        if not value and self.text == "":
+            self.text = "0"
+
 class MainApp(App):
     def build(self):
         fontSize = 80
-        numberFontSize = 120
+        numberFontSize = 100
         main_layout = BoxLayout(orientation="vertical", padding=[50, 5])
         lengthLayout = BoxLayout(orientation="horizontal", padding = [0, 5], spacing = 20)
         lengthLabel = Label(text="Dĺžka (m)", font_size=fontSize, halign="left")
-        self.length = TextInput(text="0", multiline=False, readonly=False, halign="right", font_size=numberFontSize)
+        self.length = MyTextInput(text="0", multiline=False, readonly=False, halign="right", font_size=numberFontSize)
+        self.length.bind(on_touch_down=self.emptyText)
         dimensionLayout = BoxLayout(orientation="horizontal", padding = [0, 5], spacing = 20)
         dimensionsLabel = Label(text="Výška (mm)", font_size=fontSize, halign="left")
-        self.dimensions = TextInput(text="0", multiline=False, readonly=False, halign="right", font_size=numberFontSize)
+        self.dimensions = MyTextInput(text="0", multiline=False, readonly=False, halign="right", font_size=numberFontSize)
         quantityLayout = BoxLayout(orientation="horizontal", padding = [0, 5], spacing = 20)
         quantityLabel = Label(text="Počet etikiet", font_size=fontSize, halign="left")
-        self.quantity = TextInput(text="0", multiline=False, readonly=False, halign="right", font_size=numberFontSize)
+        self.quantity = MyTextInput(text="0", multiline=False, readonly=False, halign="right", font_size=numberFontSize)
         productionLayout = BoxLayout(orientation="horizontal", padding = [0, 5], spacing = 20)
         productionLabel = Label(text="Produkcia", font_size=fontSize, halign="left")
-        self.production = TextInput(text="1", multiline=False, readonly=False, halign="right", font_size=numberFontSize)
+        self.production = MyTextInput(text="1", multiline=False, readonly=False, halign="right", font_size=numberFontSize)
         lengthLayout.add_widget(lengthLabel)
         lengthLayout.add_widget(self.length)
         main_layout.add_widget(lengthLayout)
@@ -44,20 +58,27 @@ class MainApp(App):
         return main_layout
 
     def onButtonClick(self, instance):
-        length = int(self.length.text)
-        dimensions = int(self.dimensions.text)
-        quantity = int(self.quantity.text)
-        production = int(self.production.text)
-        if length and dimensions:
-            result = str((length/(dimensions/1000))*production)
-            self.quantity.text = result
-        elif dimensions and quantity:
-            result = str((dimensions*quantity)/production)
-            self.length.text = result/1000
-        elif length and quantity:
-            result = str((length/quantity)*production)
-            self.dimensions.text = result*1000
-    
+        if self.length.text != "" and self.dimensions.text != "" and self.quantity.text != "" and self.production .text != "":
+            length = float(self.length.text)
+            dimensions = float(self.dimensions.text)
+            quantity = float(self.quantity.text)
+            production = float(self.production.text)
+            if production == 0:
+                production = 1
+                self.production.text = "1"
+            if length and dimensions:
+                result = (length/(dimensions/1000))*production
+                self.quantity.text = str(round(result,2))
+            elif dimensions and quantity:
+                result = (dimensions*quantity)/production
+                self.length.text = str(round(result/1000, 2))
+            elif length and quantity:
+                result = (length/quantity)*production
+                self.dimensions.text = str(round(result*1000, 2))
+
+    def emptyText(self, instance, text):
+        text = ""
+
     def zeroValues(self, instance):
         self.length.text = "0"
         self.dimensions.text = "0"
